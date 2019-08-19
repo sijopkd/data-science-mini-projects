@@ -1,0 +1,2055 @@
+---
+title: "Final_Submission"
+author: "Haritha Maheshkumar, Sachin Balakrishnan, Sahana Subramanian, Sijo VM"
+date: "19/08/2019"
+output: md_document
+---
+
+## **Visual story telling part 1: Green buildings**
+
+```{r, include=FALSE}
+data_directory <- 'C:/Users/Sahana/Documents/DataScienceR/STA380/data'
+setwd(data_directory)
+data_raw <- read.csv('greenbuildings.csv')
+```
+
+
+```{r, include=FALSE}
+library(corrplot)
+#library(cowplot)
+library(LICORS)
+library(RColorBrewer)
+library(mosaic)
+library(tidyverse)
+
+```
+
+
+```{r, include=FALSE}
+data_raw$green_rating <- as.factor(data_raw$green_rating)
+#boxplot(cty~class, data=mpg)
+#ggplot(data=data_raw) + 
+  #geom_boxplot(mapping=aes(x=green_rating, y=Rent))
+
+
+```
+
+ 
+
+```{r, include=FALSE}
+paste("Median rent for green buildings: ", 
+median(data_raw$Rent[data_raw$green_rating == 1]))
+
+paste("Median rent for non-green buildings: ", 
+median(data_raw$Rent[data_raw$green_rating == 0]))
+
+```
+
+
+### **Problem**
+An Austin real-estate developer is interested in the possible economic impact of "going green" in her latest project: a new 15-story mixed-use building on East Cesar Chavez, just across I-35 from downtown. Will investing in a green building be worth it, from an economic perspective? The baseline construction costs are $100 million, with a 5% expected premium for green certification.
+
+The developer has had someone on her staff, who's been described to her as a "total Excel guru from his undergrad statistics course," run some numbers on this data set and make a preliminary recommendation. Here's how this person described his process:
+
+> I began by cleaning the data a little bit. In particular, I noticed that a handful of the buildings in the data set had very low occupancy rates (less than 10% of available space occupied). I decided to remove these buildings from consideration, on the theory that these buildings might have something weird going on with them, and could potentially distort the analysis. Once I scrubbed these low-occupancy buildings from the data set, I looked at the green buildings and non-green buildings separately. The median market rent in the non-green buildings was $25 per square foot per year, while the median market rent in the green buildings was $27.60 per square foot per year: about $2.60 more per square foot. (I used the median rather than the mean, because there were still some outliers in the data, and the median is a lot more robust to outliers.) Because our building would be 250,000 square feet, this would translate into an additional $250000 x 2.6 = $650000 of extra revenue per year if we build the green building.
+
+> Our expected baseline construction costs are $100 million, with a 5% expected premium for green certification. Thus we should expect to spend an extra $5 million on the green building. Based on the extra revenue we would make, we would recuperate these costs in $5000000/650000 = 7.7 years. Even if our occupancy rate were only 90%, we would still recuperate the costs in a little over 8 years. Thus from year 9 onwards, we would be making an extra $650,000 per year in profit. Since the building will be earning rents for 30 years or more, it seems like a good financial move to build the green building.
+
+> Goal: The developer listened to this recommendation, understood the analysis, and still felt unconvinced. She has therefore asked you to revisit the report, so that she can get a second opinion.
+
+
+### **Steps taken**
+
+* Visualized the data to identify confounding variables affecting rent 
+* Visualized the data to arrive at the precise numbers that can be used for calculations 
+
+
+### **Visualizations**
+
+
+```{r ,out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+ggplot(data=data_raw) + 
+  geom_point(mapping=aes(x=cluster_rent, y=Rent, colour=green_rating)) +
+  labs(x="Cluster Rent", y='Rent', title = 'Green buildings: Cluster rent VS Rent',
+       color='Green building')
+
+
+ggplot(data=data_raw) + 
+  geom_point(mapping=aes(x=age, y=Rent, colour=green_rating))+
+  labs(x="Age", y='Rent', title = 'Green buildings: Age VS Rent',
+       color='Green building')
+
+ggplot(data=data_raw) + 
+  geom_point(mapping=aes(x=size, y=Rent, colour=green_rating)) +
+  labs(x="Size", y='Rent', title = 'Green buildings: Size VS Rent',
+       color='Green building')
+
+ggplot(data=data_raw) + 
+  geom_point(mapping=aes(x=age, y=Rent, colour=class_a))+
+  labs(x="Age", y='Rent', title = 'Class A: Age VS Rent',
+       color='Class A building')
+
+```
+**Observations** 
+
+* Rent is correlated with the cluster rent
+* Rent is correlated with the size, as expected
+* Most of the class A buildings are also younger 
+* Age does not have a high correlation with rent 
+* Class a buildings get higher rent as they are premium buildings 
+
+
+```{r out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+g = ggplot(data_raw, aes(x=age))
+g + geom_density(aes(fill=factor(green_rating)), alpha=0.4)+
+  labs(x="Age", y='Density', title = 'Distribution of age',
+       fill='Green building')
+
+ggplot(data_raw, aes(class_a, ..count..)) + geom_bar(aes(fill = green_rating), position = "dodge")+
+  labs(x="Class a", y='Number of buildings', title = 'Class A vs Green Buildings',
+       fill='Green building')
+
+g = ggplot(data_raw, aes(x=size))
+g + geom_density(aes(fill=factor(green_rating)), alpha=0.4)+
+  labs(x="Size", y='Density', title = 'Distribution of size',
+       fill='Green building')
+
+
+medians <- aggregate(Rent ~  class_a, data_raw, median)
+ggplot(data=data_raw, aes(x=factor(class_a), y=Rent, fill=class_a)) + geom_boxplot()+
+  stat_summary(fun.y=median, colour="darkred", geom="point", 
+               shape=18, size=3,show.legend = FALSE) + 
+  geom_text(data = medians, aes(label = Rent, y = Rent - 20)) +
+  labs(x="Class A", y='Rent', title = 'Rent vs Class a',
+       fill='Class A')
+
+```
+**Observations** 
+
+* Most of the green buildings are younger than non-green buildings 
+* The proportion of class a buildings is higher in green buildings 
+* The proportion of green and non-green building increases as the size of buildings increases
+* The is a significant difference in the of rent of class a and non-class a buildings 
+
+```{r out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+data_raw$age_cat <- cut(data_raw$age, breaks = c(0, seq(10, 190, by = 10)), labels = 0:18,right=FALSE)
+
+medians <- aggregate(Rent~ age_cat + green_rating, data_raw, median)
+
+
+ggplot(data = medians, mapping = aes(y = Rent, x = age_cat ,group = green_rating, colour=green_rating)) +
+   geom_line(size=1.2) +
+  labs(x="Age in 10 years", y='Median Rent', title = 'All buildings: Median rent over the years',
+       fill='Green building')
+
+# Size in 100k
+data_raw$size_cat <- cut(data_raw$size, breaks = c(0, seq(10, 3781045, by = 100000)), labels = 0:37,right=FALSE)
+medians <- aggregate(Rent ~ size_cat + green_rating, data_raw, median)
+ggplot(data = medians, mapping = aes(y = Rent, x = size_cat ,group = green_rating, colour=green_rating)) +
+   geom_line(size=1.2) +
+  labs(x="Size in 100k sq.ft", y='Median Rent', title = 'All buildings: median rent for different building sizes',
+       fill='Green building')
+
+
+data_non_class_a <- subset(data_raw, data_raw$class_a != 1)
+data_non_class_a$age_cat <- cut(data_non_class_a$age, breaks = c(0, seq(10, 190, by = 10)), labels = 0:18,right=FALSE)
+
+medians <- aggregate(Rent~ age_cat + green_rating, data_non_class_a, median)
+
+
+ggplot(data = medians, mapping = aes(y = Rent, x = age_cat ,group = green_rating, colour=green_rating)) +
+   geom_line(size=1.2)+
+  labs(x="Age in 10 years", y='Median Rent', title = 'Non-Class A buildings: Median rent over the years',
+       fill='Green building')
+
+# Size in 100k
+data_non_class_a$size_cat <- cut(data_non_class_a$size, breaks = c(0, seq(10, 3781045, by = 100000)), labels = 0:37,right=FALSE)
+medians <- aggregate(Rent ~ size_cat + green_rating, data_non_class_a, median)
+ggplot(data = medians, mapping = aes(y = Rent, x = size_cat ,group = green_rating, colour=green_rating)) +
+   geom_line(size=1.2)+
+  labs(x="Size in 100k sq.ft", y='Median Rent', title = 'Non-class A buildings: median rent for different building sizes',
+       fill='Green building')
+
+
+```
+
+
+**Observations** 
+
+* For a size of 250,000 sqft, the green buildings have a higher rent when it is a class a building
+* The rent of green buildings is lower than non-green ones when they are not class a buildings
+* The rent difference is not uniform across different sizes and ages 
+
+
+
+
+```{r, echo=FALSE, include=FALSE}
+data_size <- subset(data_raw, data_raw$size > 200000 & data_raw$size < 300000)
+data_size <- subset(data_size, data_size$class_a == 1)
+data_size_class <- subset(data_raw, data_non_class_a$size > 200000 & data_non_class_a$size < 300000)
+paste("Median leasing rate for class a buildings of sizes ranging from 200k to 300k sq.ft ", 
+median(data_size$leasing_rate))
+
+medians <- aggregate(Rent~ age_cat + green_rating, data_size, median)
+medians_1 <- subset(medians, medians$green_rating == 1)
+rent_1<-medians_1[1:5,]$Rent
+medians_0 <- subset(medians, medians$green_rating == 0)
+rent_0<-medians_0[1:5,]$Rent
+
+paste("Difference in rent for the first 5 years class a buildings: ", 
+(sum(rent_1,na.rm = T) - sum(rent_0, na.rm = T)) / 5)
+
+
+medians <- aggregate(Rent~ age_cat + green_rating, data_size_class, median)
+medians_1 <- subset(medians, medians$green_rating == 1)
+rent_1<-medians_1[1:5,]$Rent
+medians_0 <- subset(medians, medians$green_rating == 0)
+rent_0<-medians_0[1:5,]$Rent
+
+paste("Difference in rent for the first 5 years for non-class a buildings: ", 
+(sum(rent_1,na.rm = T) - sum(rent_0, na.rm = T)) / 5 )
+```
+
+### **Insights and Recommendations** 
+
+We have seen that the analysis by stats guru is flawed since he fails to account for all the factors that affect the rent. First, he used the median rent of all buildings to calculate the returns. Hence he fails to accout for other factors such as size and class of the buildings into his analysis. For instance, we have
+seen that class a buildings will yield a higher rent than non green buildings that are class a. 
+
+**Calculations**  
+
+* The rent difference is not uniform across different sizes and age, so we cannot use a fixed difference in rent to calculate the returns
+* For the same reason, we should consider only the buildings that have sizes between 200k and 300k sq.ft 
+* We should also use the median leasing rate of such buildings instead of 90% rate 
+* The data provided does not have information about class a buildings with sizes ranging from 200k sq.ft to 300k sq.ft. So let's use average 5 year return to arrive at final recommendations
+
+
+
+```{r, include=FALSE}
+
+paste("If we build a class a green building and if we assume 91.6% occpancy rate, it is expected to recuperate the costs in  ", round(5000000/(3.097*250000*0.916),2), " years")
+
+```
+**Final recommendation** 
+
+* If the building is not a Class-A building, it is not wise to invest in a green building since the average returns for 5 years are negative
+* The builder should invest in a Class-A green building to yield positive returns
+* We can expect a occupancy rate of 91.6% on such buildings 
+* The average difference in rent for green and non-green buildings that are class a and whose sizes ranging from 200k to 300k is 3.097
+* Hence, for a 250k sq.ft building at 91.6% occupancy, we expect to recuperate the costs in 7.05 years
+
+
+## **Visual story telling part 2: flights at ABIA**
+
+```{r, echo=FALSE, include=FALSE}
+library(ggplot2)
+library(ggpubr)
+airport.data <- read.csv("C:/Users/Sahana/Documents/DataScienceR/STA380/data/ABIA.csv", header = TRUE) 
+head(airport.data)
+attach(airport.data)
+colSums(is.na(airport.data))
+```
+
+```{r, echo=FALSE, include=FALSE}
+
+colnames(airport.data)
+dim(airport.data)
+
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+str(airport.data)
+
+```
+
+We have in hand, the ‘flight’ data during the year 2008 at Austin airport. Let’s do some exploratory data analysis and try to isolate the patterns/behaviour. We are looking at around 100k records of flight data in 2008 here, primarily focussing on the air traffic and delays. 
+
+```{r, echo=FALSE, include=FALSE}
+
+airport.data[is.na(airport.data)] <- 0
+colSums(is.na(airport.data))
+
+col_factors <- c('Month', 'DayofMonth', 'DayOfWeek', 'Cancelled', 'Diverted')
+airport.data[,col_factors] <- lapply(airport.data[,col_factors], as.factor)
+
+airport.data$Dep_Hr <- sapply(DepTime, function(x) x%/%100)
+airport.data$CRSDep_Hr <- sapply(CRSDepTime, function(x) x%/%100)
+airport.data$Arr_Hr <- sapply(ArrTime, function(x) x%/%100)
+airport.data$CRSArr_Hr <- sapply(CRSArrTime, function(x) x%/%100)
+
+aus.dep <- subset(airport.data, Origin == 'AUS')
+aus.arr <- subset(airport.data, Dest == 'AUS')
+
+```
+
+
+From the histograms of arrival and departure delays, its conclusive that both are centred around a mean of ZERO. We are observing a similar trend with a few outliers (values close to 500 minutes).
+
+
+```{r, echo=FALSE}
+pl <- ggplot(data = airport.data, aes(x=ArrDelay)) + 
+  geom_histogram(bins = 100, binwidth = 10, color='blue') + 
+  xlab('Arrival Delay') +
+  ggtitle('Distribution of Arrival Delays')
+
+print(pl)
+
+pl2 <- ggplot(data=airport.data, aes(x=))
+```
+
+
+
+```{r, echo=FALSE}
+pl <- ggplot(data = airport.data, aes(x=DepDelay)) + 
+  geom_histogram(bins = 100, binwidth = 10, color='blue') +
+  xlab('Departure Delay') +
+  ggtitle('Distribution of Departure Delays')  
+
+
+print(pl)
+
+```
+
+
+We will analyse the correlation between arrival and departure delays to understand if any particular carrier is deviating from the normal behaviour. For couple of carriers, there are a few outliers as expected from the distribution plot. Almost perfect correlation between the delays except for a few carriers who did compensate for the departure delays(Arrival delay almost none for such observations). 
+
+```{r, echo=FALSE}
+
+pl <- ggplot(aes(x=DepDelay, y=ArrDelay), data=airport.data) +
+  geom_point(aes(color=UniqueCarrier))
+
+print(pl +
+        ggtitle('Correlation between arrival and departure delays') +
+        xlab('Departure Delay') +
+        ylab('Arrival Delay'))
+
+```
+
+
+
+We will try to visualize the correlation for carriers individually. Visually, the slope of the plots remain roughly constant, so NO carriers are consistently making up for the departure delays.
+
+```{r fig.width=6, fig.height=20, echo=FALSE}
+  
+pl <- ggplot(aes(x=DepDelay, y=ArrDelay), data=airport.data) +
+  geom_point() +
+  facet_grid(UniqueCarrier ~ .) +
+  ggtitle('Arrival delay and depature delay correlation by carrier')
+
+print(pl)
+
+```
+
+
+---------------------------------------
+Air carrier operation at Austin Airport
+---------------------------------------
+Next we will shift our focus to the Carrier operation at Austin Airport. Southwest(WN) tops the list with almost 40k operations, followed by Alaskan Airlines(AA). Northwest Airlines(NW) has the fewest operations -121. 
+
+
+```{r, echo=FALSE}
+pl <- ggplot(aes(x=UniqueCarrier), data=airport.data) +
+  geom_bar(fill='black', position='dodge') +
+  ggtitle('Number of operations by Carrier') +
+  xlab('Carrier Name') +
+  ylab('Number of operations')
+  
+
+print(pl)
+
+```
+
+
+Lets try to find out which carrier you can trust the most before planning your next flight!
+
+According to the Probability of carrier delay in excess of 30 mins:
+1. Southwest(WN) and Frontier Airlines(F9) have the lowest
+2. YV and 9E have more than 60% chance. We observed a big outlier for 9E earlier, so could be one of the reason. 
+
+Reliable Carriers:
+Southwest(WN) seems to be the most reliable. Even with 40k operations, the avg carrier delay is just 18 mins. Avg departure delay is less than avg carrier delay. We have a few airlines – F9 MQ, US, WN and XE with less that 30% probability, but the # of operations are less. We feel Alaskan Airlines(AA) with close to 20k operations outperforms a lot of carriers with way fewer number of operations.
+
+Unreliable Carriers:
+1. 9E and YV seems to have an avg carrier delay in excess of 1hr.
+2. With just 121 operations, NW has a high avg carrier delay of 48 minutes.
+
+
+```{r, echo=FALSE, include=FALSE}
+
+library(tidyverse)
+
+d1 = airport.data %>%
+  group_by(UniqueCarrier) %>%
+  summarise(avg_Carrier_delay = mean(CarrierDelay[CarrierDelay>0]), avg_Departure_delay = mean(DepDelay[DepDelay>0]), total_operations=length(Year), prob_30minsDelay = length(CarrierDelay[CarrierDelay > 30])/length(CarrierDelay[CarrierDelay]))
+
+```
+
+```{r, include=FALSE, echo=FALSE}
+d1
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+library(reshape2)
+
+df <- melt(d1, id.vars = 'UniqueCarrier')
+
+pl1 <- ggplot(data=subset(df, df$variable != 'total_operations'), aes(x=UniqueCarrier, y=value, fill=variable)) +
+  geom_bar(stat="identity", position='dodge') +
+  ggtitle('Type of delay by Carrier') +
+  xlab('Carrier Name') +
+  ylab('Delay in minutes')
+
+# Probability of delay > 30mins
+pl3 <- ggplot(data=d1, aes(x=UniqueCarrier, y=prob_30minsDelay)) + 
+  geom_bar(stat="identity") +
+  ggtitle('Probability of 30 or minutes delay by carrier type') +
+  xlab('Carrier Name') +
+  ylab('30 mins or more delay pbblty')
+
+```
+
+
+```{r, echo=FALSE}
+
+print(pl1)
+print(pl3)
+
+```
+
+
+
+
+Types of Delays encountered:
+-----------------------------------
+
+Most frequently occurring and total delay time in minutes- 
+NAS Delay, Late Aircraft and Carrier delay
+
+Least-
+Security Delay
+
+
+
+```{r, echo=FALSE}
+CarrierDelay[is.na(CarrierDelay)] <- 0
+WeatherDelay[is.na(WeatherDelay)] <- 0
+NASDelay[is.na(NASDelay)] <- 0
+SecurityDelay[is.na(SecurityDelay)] <- 0
+LateAircraftDelay[is.na(LateAircraftDelay)] <- 0
+
+delays = data.frame(row.names = c('CarrierDelay', 'WeatherDelay', 'NASDelay', 'SecurityDelay', 'LateAircraftDelay'),  
+'Total'=c(sum(CarrierDelay), sum(WeatherDelay), sum(NASDelay), sum(SecurityDelay), sum(LateAircraftDelay)))
+
+delay_count = c(sum(CarrierDelay>0), sum(WeatherDelay>0), sum(NASDelay>0), sum(SecurityDelay>0), sum(LateAircraftDelay>0))
+delays$delay_count <- delay_count
+
+ggplot(delays, aes(x=rownames(delays), y=Total)) +
+  geom_bar(stat = 'identity') +
+  ggtitle('Total delay time in mins across different delay types') +
+  xlab('Type of delay') +
+  ylab('Delay in minutes')
+
+ggplot(delays, aes(x=rownames(delays), y=delay_count)) +
+  geom_bar(stat = 'identity') +
+  ggtitle('Number of delays recorded across different delay types') +
+  xlab('Type of delay') +
+  ylab('Number of delays')
+
+
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+
+aus.dep <- subset(airport.data, Origin == 'AUS')
+aus.arr <- subset(airport.data, Dest == 'AUS')
+
+```
+
+
+
+Delay of flights departing from Austin - month-wise split
+Sep, Oct and Nov have the least
+
+
+
+
+```{r, echo=FALSE}
+df1 <- aus.dep %>%
+  group_by(Month) %>%
+  summarise(dep_delay = sum(DepDelay), arrdelay=sum(ArrDelay))
+
+df1
+```
+
+
+```{r, echo=FALSE}
+df <- melt(df1, id.vars = 'Month')
+
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+df1 <- aus.arr %>%
+  group_by(Month) %>%
+  summarise(dep_delay = sum(DepDelay), arrdelay=sum(ArrDelay))
+
+df1 
+
+df <- melt(df1, id.vars = 'Month')
+
+```
+
+
+
+Lets try to understand how the delays vary across months. Maximum delay times are observed during the months of March, June and December. September, October and November are the least(Air traffic is also less during these months). 
+
+December month seems to be interesting !! Low air traffic, but high delays observed. 
+
+```{r, echo=FALSE}
+pl1 <- ggplot(data=df, aes(x=Month, y=value, fill=variable)) +
+  geom_bar(stat="identity", position='dodge') +
+  ggtitle('Departing flights - Total delay by Month') +
+  xlab('Month') +
+  ylab('Delay in minutes')
+
+print(pl1)
+```
+
+
+Number of Flights by month. 
+Arrivals and Departure numbers are similar.
+
+```{r fig.width=10, fig.height=4, echo=FALSE, include=FALSE}
+
+by.month <- aus.dep %>%
+  group_by(Month) %>%
+  summarise(Total_flights_dep=length(Year))
+
+by.month.arr <- aus.arr %>%
+  group_by(Month) %>%
+  summarise(Total_flights_arr=length(Year))
+
+by.month$Total_flights_arr <- by.month.arr$Total_flights_arr
+df <- melt(by.month, id.vars = 'Month')
+
+```
+
+
+```{r, echo=FALSE}
+
+
+ggplot(data=df, aes(x=Month, y=value, fill=variable)) +
+  geom_bar(stat="identity", position='dodge') +
+  ggtitle('Flight departing and Arrival counts by month') +
+  xlab('Month') +
+  ylab('Number of oeprations')
+
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+str(airport.data)
+
+```
+
+
+
+------------------------------------
+Air traffic hours at Austin Airport
+------------------------------------
+
+Number of Departures- 49623
+Number of Arrivals- 49637
+
+Plot C suggests that there are a lot of late night arrivals.
+Literally very few departures post 9 PM
+
+High number of departures are observed between 6AM and 8AM.
+
+
+```{r, echo=FALSE, include=FALSE}
+
+theme_set(theme_gray())
+
+cat("Number of Departures-", nrow(aus.dep))
+cat("\nNumber of Arrivals-", nrow(aus.arr), "\n")
+
+pl1 <- ggplot(data = aus.dep, aes(x=Dep_Hr)) + 
+  geom_bar() + 
+  ggtitle("Sched Dep by Hour") +
+  xlab('Scheduled depart hrs') +
+  ylab('# of flights')
+
+pl2 <- ggplot(data = aus.dep, aes(x=CRSDep_Hr)) + 
+   geom_bar() + 
+   ggtitle("Actual Dep by Hour") +
+   xlab('Actual depart hrs') +
+   ylab('# of flights')
+
+pl3 <- ggplot(data = aus.arr, aes(x=Arr_Hr)) + 
+  geom_bar() +
+  ggtitle("Sched Arr by Hour") +
+  xlab('Scheduled Arr hrs') +
+  ylab('# of flights')
+
+pl4 <- ggplot(data = aus.arr, aes(x=CRSArr_Hr)) + 
+  geom_bar() +
+  ggtitle("Actual Arr by Hour") +
+  xlab('Actual Arr hrs') +
+  ylab('# of flights')
+
+aus.traffic <- aus.dep %>%
+  group_by(CRSDep_Hr) %>%
+  summarise(count_actualDep = length(Year))
+
+aus.traffic
+figure <- ggarrange(pl1, pl2, pl3, pl4,
+                    labels = c("A", "B", "C", "D"),
+                    ncol = 2, nrow = 2)
+
+```
+
+
+```{r, echo=FALSE}
+
+figure
+
+```
+
+
+Not much insights across months except for the fact that there is a dip during the low traffic months - Sep, Oct, Nov. 
+
+```{r fig.height=20, fig.width=6, echo=FALSE}
+ggplot(data = aus.dep, aes(x=CRSDep_Hr)) + 
+  geom_bar() +
+  facet_grid(Month~.) + 
+  ggtitle('Departure time by Month') +
+  ylab('Flight Count') +
+  xlab('Departing time')
+
+```
+
+
+Traffic combining Departures and Arrivals:
+------------------------------------------
+11 AM to 5PM seems to be the busiest time at Autin Airport.
+Airtraffic is really low during early morning hours until 5AM.
+
+
+```{r, echo=FALSE, include=FALSE}
+aus.trafficDep <- aus.dep %>%
+  group_by(CRSDep_Hr) %>%
+  summarise(count_actualDep = length(Year))
+
+aus.trafficDep
+
+aus.trafficArr <- aus.arr %>%
+  group_by(CRSArr_Hr) %>%
+  summarise(count_actualArr = length(Year))
+
+aus.traffic <- merge(x = aus.trafficDep, y = aus.trafficArr, by.x ='CRSDep_Hr', by.y = 'CRSArr_Hr', all = TRUE)
+aus.traffic[is.na(aus.traffic)] <- 0
+aus.traffic$Total_Flights <- aus.traffic$count_actualDep + aus.traffic$count_actualArr
+
+aus.traffic
+
+
+
+```
+
+
+```{r, echo=FALSE}
+ggplot(aus.traffic, aes(x=CRSDep_Hr, y=Total_Flights)) +
+  geom_bar(stat = 'identity', fill='#CE4150') +
+  xlab('Hour of the day') +
+  ylab('Flight count') +
+  ggtitle('Total Flights by Hour of the day (Dep and Arr inclusive)')
+```
+
+
+Lets analyse a little on weather delay across months. 
+We think weather delay combined with tourist activity could be an issue with December.We are considering only the delays caused in excess of 15 minutes
+
+```{r, echo=FALSE, include=FALSE}
+
+ggplot(airport.data, aes(x=Month)) +
+  geom_bar() +
+  ggtitle('Flight Count by month') +
+  ylab('# of flights')
+
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+
+weather.delay.dep = aus.dep %>%
+  group_by(Month) %>%
+  summarise(count_WeatherDelays = length(WeatherDelay[WeatherDelay > 15]),
+            WeatherDelay_minutes = sum(WeatherDelay[WeatherDelay > 15]))
+
+weather.delay.dep
+
+weather.delay.arr = aus.arr %>%
+  group_by(Month) %>%
+  summarise(count_WeatherDelays = length(WeatherDelay[WeatherDelay > 15]),
+            WeatherDelay_minutes = sum(WeatherDelay[WeatherDelay > 15]))
+
+weather.delay.arr
+
+pl1 <- ggplot(data=weather.delay.dep, aes(x=Month, y=count_WeatherDelays)) +
+  geom_bar(stat='identity') +
+  xlab('Month') +
+  ylab('# of weather delays') +
+  ggtitle('# Weather delays by Month- Departures')
+
+pl2 <- ggplot(data=weather.delay.arr, aes(x=Month, y=count_WeatherDelays)) +
+  geom_bar(stat='identity') +
+  xlab('Month') +
+  ylab('# of weather delays') +
+  ggtitle('# Weather delays by Month- Arrivals')
+
+pl3 <- ggplot(data=weather.delay.dep, aes(x=Month, y=WeatherDelay_minutes)) +
+  geom_bar(stat='identity') +
+  xlab('Month') +
+  ylab('Delay in minutes') +
+  ggtitle('Weather Delay in minutes - Dep')
+
+pl4 <- ggplot(data=weather.delay.arr, aes(x=Month, y=WeatherDelay_minutes)) +
+  geom_bar(stat='identity') +
+  xlab('Month') +
+  ylab('Delay in minutes') +
+  ggtitle('Weather Delay in minutes - Arr')
+
+pl5 <- ggplot(airport.data, aes(x=Month)) +
+  geom_bar() +
+  xlab('Month') +
+  ylab('# of flights') +
+  ggtitle('Flight count by month')
+
+figure <- ggarrange(pl1, pl2, pl3, pl4,
+                    labels = c("A", "B", "C", "D"),
+                    ncol = 2, nrow = 2)
+
+```
+
+Both the number and minutes of weather delay peaks during March for Departures. There is a high weather delay count in the month of December for Arrivals ONLY, which could may imply the delays are not caused at Austin airport !!! 
+
+
+
+```{r, echo=FALSE}
+figure
+
+print(pl5)
+```
+
+
+
+## **Portfolio Modeling**
+
+### **Problem**
+In this problem, we will construct three different portfolios of exchange-traded funds, or ETFs, and use bootstrap resampling to analyze the short-term tail risk of our portfolios.
+
+
+```{r, echo=FALSE, include=FALSE}
+library(ggstance)
+library(mosaic)
+library(quantmod)
+library(foreach)
+
+```
+
+
+
+
+We selected the ETFs ensuring diversity and different levels of risk. 
+
+The Ivesco QQQ trust is one of the largest, owns only non-financial stocks and is tech-heavy. The stock had performed well in 2017 but had a poor return in 2018. 
+
+SPY is one of the safest and largest ETFs around.
+
+ProShares VIX Short-Term Futures ETF (SVXY) is a high risk ETF. This is an unusual ETF since the performance is dependent on the market volatility, not security. 
+
+ProShares UltraShort FTSE Europe (EPV) is a low performing ETF for the past few years. iShares Core Growth Allocation ETF (AOR) is a very diverse ETF. 
+
+In total, we have selected 6 ETFs - "QQQ", "SPY", "SVXY", "EPV", "AOR" and "YYY". We have considered 5 years of ETF data starting from 01-Jan-2014.
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+# Import a few stocks
+mystocks = c("QQQ", "SPY", "SVXY", "EPV", "AOR", "YYY")
+
+# Getting the price data for 5 years
+getSymbols(mystocks, from='2014-01-01')
+
+for(ticker in mystocks){
+  expr = paste0(ticker, "a=adjustOHLC(", ticker, ")")
+  eval(parse(text=expr))
+}
+
+
+```
+
+
+Sample Data for YYY 
+
+```{r, echo=FALSE}
+head(YYYa)
+
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+# Computing the return matrix
+
+all_returns = cbind( ClCl(QQQa),
+                     ClCl(SPYa),
+                     ClCl(SVXYa),
+                     ClCl(EPVa),
+                     ClCl(AORa),
+                     ClCl(YYYa))
+
+head(all_returns)
+
+```
+
+
+
+```{r, echo=FALSE, include=FALSE}
+# Remove NAs
+
+all_returns = as.matrix(na.omit(all_returns))
+head(all_returns)
+
+```
+
+
+
+Lets look at how the stocks are performing relative to each other. We can see a strong correlation here. But it is complex and non-linear. As discussed above, a few are performing well, others  are not.
+
+```{r, echo=FALSE}
+
+# checking the correlation
+pairs(all_returns)
+
+```
+
+
+Volatility of the ETFs across the 5 year period.
+
+
+```{r, echo=FALSE}
+
+# Volatility check
+plot(ClCl(QQQa), type='l')
+plot(ClCl(SPYa), type='l')
+plot(ClCl(SVXYa), type='l')
+plot(ClCl(EPVa), type='l')
+plot(ClCl(AORa), type='l')
+plot(ClCl(YYYa), type='l')
+
+```
+
+
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+initial_wealth = 100000
+
+
+```
+
+
+
+Our initial wealth is $100,000 
+
+SIMULATION 1 : SAFE Portfolio
+
+ETFs: "QQQ", "SPY", "SVXY", "EPV", "AOR", "YYY"
+
+For the safe portfolio, we distributed 90% of the total wealth among the high performing ETFs - QQQ, SPY and AOR.
+
+
+```{r, echo=FALSE, include=FALSE}
+
+sim1 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.3, 0.4, 0.03, 0.03, 0.2, 0.04)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+
+head(sim1)
+hist(sim1[,n_days], 50)
+plot(density(sim1[,n_days]))
+
+# Profit/loss
+
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim1[,n_days]), "\n")
+cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
+
+```
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+  
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim1[,i]) 
+}
+
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+
+```
+
+
+```{r, echo=FALSE}
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('Safe Portfolio: Retruns over 20 days')
+```
+
+
+
+```{r, echo=FALSE}
+
+hist(sim1[,n_days], 50)
+plot(density(sim1[,n_days]))
+hist(sim1[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim1[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim1[,n_days]), "\n")
+cat('\n5% Value at Risk for safe portfolio-',conf_5Per, "\n")
+
+```
+
+
+
+SIMULATION 2 : HIGH RISK PORTFOLIO
+
+For the high risk portfolio, we distributed 90% of the total wealth among the low performing ETFs - SVXY, EPV and YYY.
+
+Average return of investement after 20 days - $100724.3  
+5% Value at Risk for safe portfolio - $7850.127  
+
+```{r, echo=FALSE, include=FALSE}
+
+sim2 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.01, 0.02, 0.3, 0.3, 0.07, 0.3)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+
+head(sim2)
+hist(sim2[,n_days], 50)
+plot(density(sim2[,n_days]))
+
+# Profit/loss
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim2[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim2[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+wealth_daywise = c()
+  
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim2[,i]) 
+}
+
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+
+```
+
+
+```{r, echo=FALSE}
+
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('High Risk Portfolio: Retruns over 20 days')
+
+```
+
+```{r, echo=FALSE}
+
+hist(sim2[,n_days], 50)
+plot(density(sim2[,n_days]))
+
+# Profit/loss
+hist(sim2[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim2[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim2[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+
+
+SIMULATION 3 - With equal weights for high risk and low risk
+
+```{r, echo=FALSE, include=FALSE}
+sim3 = foreach(i=1:5000, .combine = rbind) %do% {
+  weights = c(0.17, 0.17, 0.17, 0.17, 0.17, 0.15)
+  total_wealth = initial_wealth
+  holdings = total_wealth * weights
+  n_days = 20
+  wealthtracker = rep(0, n_days)
+  
+  for(today in 1:n_days){
+    
+    return_today = resample(all_returns, 1, orig.ids=FALSE)
+    holdings = holdings * (1 + return_today)
+    total_wealth = sum(holdings)
+    wealthtracker[today] = total_wealth
+    
+    # Rebalancing
+    holdings = total_wealth * weights
+  }
+  
+  wealthtracker
+}
+
+head(sim3)
+```
+
+
+
+```{r, echo=FALSE}
+hist(sim3[,n_days], 50)
+plot(density(sim3[,n_days]))
+
+# Profit/loss
+hist(sim3[,n_days]- initial_wealth, breaks=30)
+conf_5Per = confint(sim3[,n_days]- initial_wealth, level = 0.90)$'5%'
+cat('\nAverage return of investement after 20 days', mean(sim3[,n_days]), "\n")
+cat('\n5% Value at Risk for High portfolio-',conf_5Per, "\n")
+```
+
+```{r, echo=FALSE, include=FALSE}
+
+wealth_daywise = c()
+for (i in 1:n_days){
+    wealth_daywise[i] = mean(sim3[,i]) 
+}
+
+days = 1:n_days
+df = data.frame(wealth_daywise, days)
+
+```
+
+
+```{r, echo=FALSE}
+
+ggplot(data=df, aes(x=days, y=wealth_daywise, group=1)) +
+  geom_line(color="red")+
+  geom_point() +
+  xlab('Days') +
+  ylab('Return of investments') + 
+  ggtitle('Diverse Portfolio: Retruns over 20 days')
+
+```
+
+#### **Summary**
+
+For the safe portfolio, we are observing the maximum return of investment and the lowest 5% VaR. 
+As the portfolio risk increases, we are able to witness the decrease in returns and increase in VaR value as expected.
+
+References:
+https://www.bankrate.com/investing/best-etfs/
+https://etfdb.com/compare/lowest-ytd-returns/
+
+
+
+```{r, echo = FALSE, include=FALSE}
+library(ggplot2)
+library(ggthemes)
+library(reshape2)
+library(RCurl)
+library(foreach)
+library(fpc)
+library(cluster)
+sm_file_name <- 'C:/Users/Sahana/Documents/DataScienceR/STA380/data/social_marketing.csv'
+social_m_raw <- read.csv(sm_file_name)
+social_m <- read.csv(sm_file_name)
+```
+
+
+
+```{r,echo = FALSE, include=FALSE}
+# Remove chatter and spam
+social_m$chatter<- NULL
+social_m$spam <- NULL
+social_m$adult <- NULL
+social_m$photo_sharing <- NULL 
+social_m$health_nutrition <- NULL 
+# Center and scale the data
+X = social_m[,(2:32)]
+X = scale(X, center=TRUE, scale=TRUE)
+
+# Extract the centers and scales from the rescaled data (which are named attributes)
+mu = attr(X,"scaled:center")
+sigma = attr(X,"scaled:scale")
+
+```
+
+```{r, echo = FALSE, include=FALSE}
+# Determine number of clusters
+#Elbow Method for finding the optimal number of clusters
+set.seed(123)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+data <- X 
+wss <- sapply(1:k.max, 
+              function(k){kmeans(data, k, nstart=50,iter.max = 15 )$tot.withinss})
+wss
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+
+
+```{r, echo = FALSE, include=FALSE}
+
+# Run k-means with 10 clusters and 25 starts
+clust1 = kmeans(X, 10, nstart=25)
+#hard to visualized
+social_clust1 <- cbind(social_m, clust1$cluster)
+
+```
+
+
+```{r echo=FALSE, include=FALSE}
+plotcluster(social_m[,2:32], clust1$cluster)
+```
+
+
+
+```{r,echo = FALSE, include=FALSE}
+#cluster info to main data 
+social_clust1_main <- as.data.frame(cbind(clust1$center[1,]*sigma + mu, 
+                            clust1$center[2,]*sigma + mu,
+                            clust1$center[3,]*sigma + mu,
+                            clust1$center[4,]*sigma + mu,
+                            clust1$center[5,]*sigma + mu,
+                            clust1$center[6,]*sigma + mu,
+                            clust1$center[7,]*sigma + mu,
+                            clust1$center[8,]*sigma + mu,
+                            clust1$center[9,]*sigma + mu,
+                            clust1$center[10,]*sigma + mu))
+summary(social_clust1_main)
+
+#Change column names
+names(social_clust1_main) <- c('Cluster_1',
+                'Cluster_2',
+                'Cluster_3',
+                'Cluster_4',
+                'Cluster_5',
+                'Cluster_6',
+                'Cluster_7',
+                'Cluster_8',
+                'Cluster_9',
+                'Cluster_10')
+
+# Must remove spam since it is the lowest in all 
+# similarly chatter appears in all the cluster with high values
+
+```
+
+
+
+```{r out.width=c('50%', '50%'), fig.show='hold',echo = FALSE, include=FALSE}
+#df1 <- melt(social_clust1_main,"row.names")
+
+social_clust1_main$type <- row.names(social_clust1_main)
+
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values")
+
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+
+#cluster 6
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_6) , y=Cluster_6)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 6",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 7
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_7) , y=Cluster_7)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 7",
+        x ="Category", y = "Cluster centre values")
+
+
+#Cluster 8
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_8) , y=Cluster_8)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 8",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 9
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_9) , y=Cluster_9)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 9",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 10
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_10) , y=Cluster_10)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 10",
+        x ="Category", y = "Cluster centre values") 
+
+
+#+xlab("Category") + ylab("Cluster centre values") + title("Cluster 1")
+ # scale_x_discrete(limits = Cluster_)
+```
+
+
+## **Market segmentation**
+
+### **Problem**
+The data collected in the course of a market-research study using followers of the Twitter account of a large consumer brand that shall remain nameless---let's call it "NutrientH20" just to have a label. The goal here was for NutrientH20 to understand its social-media audience a little bit better, so that it could hone its messaging a little more sharply. Each row of the data represents one user, labeled by a random (anonymous, unique) 9-digit alphanumeric code. Each column represents an interest, which are labeled along the top of the data file. The entries are the number of posts by a given user that fell into the given category. 
+
+> The task is to analyze this data as you see fit, and to prepare a concise report for NutrientH20 that identifies any interesting market segments that appear to stand out in their social-media audience.  
+
+
+### **Steps taken**
+
+
+* K-means with the raw data 
+* K-means with k-means++ initialization 
+* K-means with k-means++ initialization using PCA data
+* Hierarchial clustering using PCA data 
+
+>Note: I have tried different number of clusters and variables and decided to use five clusters and have removed five variables including spam, chatter and adult
+
+#### **Correlation plot**
+
+```{r, echo=FALSE, include=FALSE}
+
+library('corrplot')
+```
+
+```{r, echo=FALSE}
+
+cormat <- round(cor(social_m_raw[,2:37]), 2)
+corrplot(cormat, method="circle")
+
+```
+
+A lot of variables are correlated with each other. For instance, personal fitness and health nutrition are highly correlated. Also, online gaming and college university variables have a high correlation. Let's use PCA to reduce the dimensions to create fewer number of uncorrelated variables. 
+
+
+#### **Principal Component Analysis**
+
+```{r, echo=FALSE, include=FALSE}
+
+social_m_raw$chatter<- NULL
+social_m_raw$spam <- NULL
+social_m_raw$adult <- NULL
+social_m_raw$photo_sharing <- NULL 
+social_m_raw$health_nutrition <- NULL 
+
+#################### PCA #########################
+pca_sm = prcomp(social_m_raw[,2:32], scale=TRUE, center = TRUE)
+summary(pca_sm)
+#plot(pca_sm, type= 'l')
+
+```
+
+
+```{r, echo=FALSE}
+pca_var <-  pca_sm$sdev ^ 2
+pca_var1 <- pca_var / sum(pca_var)
+#Cumulative sum of variation explained
+plot(cumsum(pca_var1), xlab = "Principal Component", 
+     ylab = "Fraction of variance explained")
+
+```
+
+```{r, echo=TRUE}
+cumsum(pca_var1)[10]
+
+```
+
+At 10th PC, around 63.37% of the variation is explained. According to Kaiser criterion, we should drop all the principal components with eigen values less than 1.0. Hence, let's pick 10 principal components. 
+
+```{r, echo=FALSE, include=FALSE}
+varimax(pca_sm$rotation[, 1:11])$loadings
+```
+
+
+```{r, echo=FALSE}
+scores = pca_sm$x
+pc_data <- as.data.frame(scores[,1:18])
+X <- pc_data
+```
+
+#### **K-Means**
+
+```{r, echo=FALSE, include=FALSE}
+library(LICORS)
+
+```
+
+```{r, echo=FALSE}
+
+# Determine number of clusters
+#Elbow Method for finding the optimal number of clusters
+set.seed(123)
+# Compute and plot wss for k = 2 to k = 15.
+k.max <- 15
+data <- X 
+wss <- sapply(1:k.max, 
+              function(k){kmeanspp(data, k, nstart=10,iter.max = 10 )$tot.withinss})
+plot(1:k.max, wss,
+     type="b", pch = 19, frame = FALSE, 
+     xlab="Number of clusters K",
+     ylab="Total within-clusters sum of squares")
+```
+
+It is difficult to find the number of clusters from the plot as the within SS decreases with number of clusters. With a lot of trial and error, I have decided to use 5 cluster since it is easier to intrepret and identify market segments. Let's also look at the where our points are using 5 clusters. 
+
+```{r, echo=FALSE,include=FALSE}
+# Run k-means with 10 clusters and 25 starts
+clust1 = kmeanspp(X, 5, nstart=15)
+#hard to visualized
+social_clust1 <- cbind(social_m, clust1$cluster)
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+library(cluster)
+library(HSAUR)
+library(fpc)
+```
+
+#### **Cluster visualization**
+
+```{r, echo=FALSE, include=TRUE}
+plotcluster(social_m[,2:32], clust1$cluster)
+```
+
+The clusters look well separated. Let's identify the characteristics of the clusters. 
+
+
+```{r, echo=FALSE, include=FALSE}
+#cluster info to main data 
+social_clust1_main <- as.data.frame(cbind(clust1$center[1,]*sigma + mu, 
+                            clust1$center[2,]*sigma + mu,
+                            clust1$center[3,]*sigma + mu,
+                            clust1$center[4,]*sigma + mu,
+                            clust1$center[5,]*sigma + mu))
+summary(social_clust1_main)
+
+#Change column names
+names(social_clust1_main) <- c('Cluster_1',
+                'Cluster_2',
+                'Cluster_3',
+                'Cluster_4',
+                'Cluster_5')
+                #'Cluster_6')
+
+```
+
+#### **Results**
+
+```{r out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+
+social_clust1_main$type <- row.names(social_clust1_main)
+
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values") 
+
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+
+
+```
+
+
+**Market segments identified** 
+1. Sports Fandom, Travel, Cooking
+2. Crafts, Current Events
+3. TV Film, Automotive, Politics
+4. Cooking, Personal Fitness, Food, Shopping, Fashion
+5. Travel, Outdoors, Business
+
+Based on the K-Means clustering, we can identify distinct market segments that NutrientH20 can potentially leverage to design specific marketing campaigns. 
+For example, Cluster 4 - "Cooking, Personal Fitness, Food, Shopping, Fashion" and Cluster 5 - "Travel, Outdoors, Business" differ vastly in terms of interests. Cluster 5 consists mainly of people who love travelling and people in Cluster 4 are more focused on personal grooming.
+Furthermore,Cluster in 1 is primarily composed of people who have a penchant for sports, travel and cooking. In contrast, cluster 2 has people who are artistic (they prefer crafts!). 
+Cluster 3 seems like people with eclectic interests - starting from movies to automotive to politics and religion as well!
+
+#### **Hierarchial Clustering** 
+#### **Results**
+
+```{r, echo=FALSE, include=FALSE}
+social_m <-social_m_raw
+# Remove chatter and spam
+social_m$chatter<- NULL
+social_m$spam <- NULL
+social_m$adult <- NULL
+social_m$photo_sharing <- NULL 
+social_m$health_nutrition <- NULL 
+
+# Center and scale the data
+X = social_m[,(2:32)]
+X = scale(X, center=TRUE, scale=TRUE)
+
+# Center/scale the data
+#protein_scaled = scale(protein, center=TRUE, scale=TRUE) 
+
+# Form a pairwise distance matrix using the dist function
+protein_distance_matrix = dist(X, method='euclidean')
+
+
+# Now run hierarchical clustering
+hier_protein = hclust(protein_distance_matrix, method='average')
+
+
+# Plot the dendrogram
+#plot(hier_protein, cex=0.8)
+# Cut the tree into 5 clusters
+cluster1 = cutree(hier_protein, k=5)
+summary(factor(cluster1))
+```
+
+
+```{r, echo=FALSE,include=FALSE }
+X <- pc_data
+# Form a pairwise distance matrix using the dist function
+protein_distance_matrix = dist(X, method='euclidean')
+
+
+# Now run hierarchical clustering
+hier_protein = hclust(protein_distance_matrix, method='complete')
+
+
+# Plot the dendrogram
+#plot(hier_protein, cex=0.8)
+# Cut the tree into 5 clusters
+cluster1 = cutree(hier_protein, k=5)
+summary(factor(cluster1))
+
+
+```
+
+```{r, echo=FALSE}
+social_clust1 <- cbind(social_m, cluster1)
+#social_m_hclust <- cbind(social_m,cluster1
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+hcluster_average <- aggregate(social_clust1, list(social_clust1$cluster1), mean)
+hcluster_average$cluster1 <- paste("Cluster_", hcluster_average$cluster1, sep = '')
+hcluster_average$Group.1 <- NULL
+hcluster_average$X <- NULL
+
+```
+
+
+```{r, echo=FALSE}
+row.names(hcluster_average) <- hcluster_average$cluster1
+hcluster_average$cluster1 <- NULL
+hcluster_average <- as.data.frame(t(hcluster_average))
+```
+
+
+
+```{r out.width=c('50%', '50%'), fig.show='hold', echo=FALSE}
+hcluster_average$type <- row.names(hcluster_average)
+social_clust1_main <- hcluster_average
+#Cluster 1
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_1) , y=Cluster_1)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 1",
+        x ="Category", y = "Cluster centre values")
+
+#cluster 2 
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_2) , y=Cluster_2)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 2",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 3
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_3) , y=Cluster_3)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 3",
+        x ="Category", y = "Cluster centre values")
+
+#Cluster 4
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_4) , y=Cluster_4)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 4",
+        x ="Category", y = "Cluster centre values")
+
+#cluster 5
+ggplot(social_clust1_main, aes(x =reorder(type, -Cluster_5) , y=Cluster_5)) +
+  geom_bar(stat="identity", position ="dodge") + 
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=-40, hjust=.1)) + 
+  labs(title="Cluster 5",
+        x ="Category", y = "Cluster centre values")
+
+
+```
+
+
+
+**Market segments identified:**
+1. Cooking, Personal Fitness
+2. Art, TV Film, Shopping
+3. Politics, Travel, Computers
+4. College Universities, Online Gaming, News
+5. Religion, Food, Parenting, School, Family
+
+Hierarchial Clustering reveals some interesting segments that differ by demographics. Intuitively, Cluster 4 - "College Universities, Online Gaming, News" will consist of a younger population as compared to Cluster 5 - "Religion, Food, Parenting, School, Family". NutrientH20 can design demographic specific marketing campaigns to get the most effective message across to their audience.
+Cluster 2 has a group of people who have artsy interests - art, tv film and travel. They sure do know how to enjoy life
+Cluster 3 has the computer lovers, who also have an interest for politics and travel. 
+
+
+
+Market segementation can allows us to derive insights that will help send the right message to the right group of people that will maximize the profits of the company and help build better relationships with the audience. Another point to note is that the cluster stability needs to be tracked over time since users move in and out of segments as their interests change.
+
+## **Author attribution**  
+
+### **Problem**
+Predicting the authorship of the articles in the C50test directory using a model trained using the c50train directory in the Reuters C50 Corpus. Describe the pre-processing and analysis pipeline in detail
+
+##### **0.Loading packages**  
+##### *Loading the required packages for text analysis*  
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+library(tm) 
+library(magrittr)
+library(slam)
+library(proxy)
+library(caret)
+library(plyr)
+library(dplyr)
+library(ggplot2)
+library('e1071')
+```
+
+#####  **1. Reading files, Pre-processing and Tokenization**  
+##### *1.a.Reading files*  
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+
+#Defining reader plain function 
+readerPlain = function(fname){
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') }
+```
+
+```{r}							
+#Reading all folders
+train=Sys.glob('C:/Users/Sahana/Documents/Predictive Models/ARM/ReutersC50/C50train/*')
+```
+
+```{r}
+#Creating training dataset
+comb_art=NULL
+labels=NULL
+
+for (name in train)
+{ 
+  author=substring(name,first=50)#first= ; ensure less than string length
+  article=Sys.glob(paste0(name,'/*.txt'))
+  comb_art=append(comb_art,article)
+  labels=append(labels,rep(author,length(article)))
+}
+```
+
+```{r}
+
+#Cleaning the file names
+readerPlain <- function(fname)
+  {
+				readPlain(elem=list(content=readLines(fname)), 
+							id=fname, language='en') 
+  }
+
+comb = lapply(comb_art, readerPlain) 
+names(comb) = comb_art
+names(comb) = sub('.txt', '', names(comb))
+``` 
+
+```{r}
+#Create a text mining corpus
+corp_tr=Corpus(VectorSource(comb))
+```
+
+##### *1.b. Pre-processing and tokenization:*  
+##### *- Convert alphabet to lower cases*  
+##### *- Removing numbers*  
+##### *- Removing punctuation*  
+##### *- Removing excess space*  
+##### *- Removing stop words*  
+
+
+```{r, echo = FALSE,warning=FALSE}
+#Pre-processing and tokenization using tm_map function:
+corp_tr_cp=corp_tr #copy of the corp_tr file
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(tolower)) #convert to lower case
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removeNumbers)) #remove numbers
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removePunctuation)) #remove punctuation
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(stripWhitespace)) #remove excess space
+corp_tr_cp = tm_map(corp_tr_cp, content_transformer(removeWords),stopwords("en")) #removing stopwords. Not exploring much on this, to avoid losing out on valuable information.
+DTM_train = DocumentTermMatrix(corp_tr_cp)
+DTM_train # some basic summary statistics
+#Removing sparse items
+DTM_tr=removeSparseTerms(DTM_train,.99)
+tf_idf_mat = weightTfIdf(DTM_tr)
+DTM_trr<-as.matrix(tf_idf_mat) #Matrix
+tf_idf_mat #3394 words, 2500 documents
+```
+
+##### **2. Repeating (1) for the test directories**  
+
+##### *2.a.Reading files*  
+
+
+```{r}
+test=Sys.glob('C:/Users/Sahana/Documents/Predictive Models/ARM/ReutersC50/C50test/*')
+```
+
+```{r}
+comb_art1=NULL
+labels1=NULL
+
+for (name in test)
+{ 
+  author1=substring(name,first=50)#first= ; ensure less than string length
+  article1=Sys.glob(paste0(name,'/*.txt'))
+  comb_art1=append(comb_art1,article1)
+  labels1=append(labels1,rep(author1,length(article1)))
+}
+``` 
+
+```{r}
+#Cleaning the file names!!
+comb1 = lapply(comb_art1, readerPlain) 
+names(comb1) = comb_art1
+names(comb1) = sub('.txt', '', names(comb1))
+```
+
+```{r}
+#Create a text mining corpus
+corp_ts=Corpus(VectorSource(comb1))
+```
+
+##### *2.b.Pre-processing and tokenization*  
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+#Pre-processing and tokenization using tm_map function:
+corp_ts_cp=corp_ts #copy of the corp_tr file
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(tolower)) #convert to lower case
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removeNumbers)) #remove numbers
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removePunctuation)) #remove punctuation
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(stripWhitespace)) #remove excess space
+corp_ts_cp = tm_map(corp_ts_cp, content_transformer(removeWords),stopwords("en")) #removing stopwords. Not exploring much on this, to avoid losing out on valuable information. 
+```
+
+##### *2.c. Ensuring identical test and train datasets*  
+
+```{r, echo = FALSE,warning=FALSE}
+#Ensuring same number of variables in test and train by specifying column names from the train document term matrix
+DTM_ts=DocumentTermMatrix(corp_ts_cp,list(dictionary=colnames(DTM_tr)))
+tf_idf_mat_ts = weightTfIdf(DTM_ts)
+DTM_tss<-as.matrix(tf_idf_mat_ts) #Matrix
+tf_idf_mat_ts #3394 words, 2500 documents
+```
+
+#### **3. Dimensionality reduction**  
+
+#### *Principal component analysis is used to (1) extract relevant features from the huge set of variables (2) eliminate the effect of multicollinearity while not losing out on relevant information from the correlated variables*  
+
+##### **3.a.Data Preparation for PCA**  
+
+#### *- To eliminate 0 entry columns*  
+
+```{r}
+DTM_trr_1<-DTM_trr[,which(colSums(DTM_trr) != 0)] 
+DTM_tss_1<-DTM_tss[,which(colSums(DTM_tss) != 0)]
+```
+
+#### *- To use only the intersecting columns*  
+
+```{r}
+#8312500 elements in both. 
+DTM_tss_1 = DTM_tss_1[,intersect(colnames(DTM_tss_1),colnames(DTM_trr_1))]
+DTM_trr_1 = DTM_trr_1[,intersect(colnames(DTM_tss_1),colnames(DTM_trr_1))]
+```
+
+#### **3.b.Extracting principal components**  
+```{r}
+mod_pca = prcomp(DTM_trr_1,scale=TRUE)
+pred_pca=predict(mod_pca,newdata = DTM_tss_1)
+```
+
+#### **3.c.Choosing the right number of principal components**  
+#### *-Chosen till PC724 - almost 75% of variance explained*  
+
+
+```{r}
+#Until PC724 - 74.5, almost 75% of variance explained. Hence stopping at 724 out of 2500 principal components
+plot(mod_pca,type='line') 
+var <- apply(mod_pca$x, 2, var)  
+prop <- var / sum(var)
+#cumsum(prop)
+plot(cumsum(mod_pca$sdev^2/sum(mod_pca$sdev^2)))
+```
+
+#### **Preparation of the dataset to be used for all the following classification purposes**  
+
+#### *-The dataset hopefully contains only the relevant and informational features for classifying the documents to the author rightly*  
+
+```{r}
+tr_class = data.frame(mod_pca$x[,1:724])
+tr_class['author']=labels
+tr_load = mod_pca$rotation[,1:724]
+
+ts_class_pre <- scale(DTM_tss_1) %*% tr_load
+ts_class <- as.data.frame(ts_class_pre)
+ts_class['author']=labels1
+```
+
+
+
+
+#### **4. Classification techniques to attribute the documents to its authors**  
+
+#### **(A) Random Forest Technique**  
+
+#### *A.1.Technique*  
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+library(randomForest)
+set.seed(1)
+mod_rand<-randomForest(as.factor(author)~.,data=tr_class, mtry=6,importance=TRUE)
+```
+
+#### *A.2. Computing accuracy*  
+#### *-1873 documents have their authors rightly classified; which provides an accuracy/classification rate of 74.9%*  
+
+```{r}
+pre_rand<-predict(mod_rand,data=ts_class)
+
+tab_rand<-as.data.frame(table(pre_rand,as.factor(ts_class$author)))
+predicted<-pre_rand
+actual<-as.factor(ts_class$author)
+temp<-as.data.frame(cbind(actual,predicted))
+temp$flag<-ifelse(temp$actual==temp$predicted,1,0)
+sum(temp$flag)
+sum(temp$flag)*100/nrow(temp)
+```
+
+
+#### **(B) Naive Baye's**  
+
+#### *B.1.Model training and prediction on test set*  
+
+```{r}
+library('e1071')
+mod_naive=naiveBayes(as.factor(author)~.,data=tr_class)
+pred_naive=predict(mod_naive,ts_class)
+``` 
+
+#### *B.2.Classification accuracy obtained* 
+#### *-810 documents have their authors rightly classified; which provides an accuracy/classification rate of 32.4%*  
+
+```{r}
+library(caret)
+
+predicted_nb=pred_naive
+actual_nb=as.factor(ts_class$author)
+
+temp_nb<-as.data.frame(cbind(actual_nb,predicted_nb))
+temp_nb$flag<-ifelse(temp_nb$actual_nb==temp_nb$predicted_nb,1,0)
+sum(temp_nb$flag)
+sum(temp_nb$flag)*100/nrow(temp_nb)
+#32.4%
+```
+
+#### *B.3.Comparing train and test accuracy**  
+
+```{r, echo = FALSE,warning=FALSE,include=FALSE}
+pred_naive_tr=predict(mod_naive,tr_class)
+tr_err_naive_pre<-pred_naive
+```
+
+#### **(C) K Nearest Neighbors  
+
+#### *C.1.Preparation of dataset*  
+
+```{r}
+train.X = subset(tr_class, select = -c(author))
+test.X = subset(ts_class,select=-c(author))
+train.author=as.factor(tr_class$author)
+test.author=as.factor(ts_class$author)
+```
+
+#### *C.2.KNN method*  
+#### *-32.08% is the classification/accuracy rate obtained from KNN method, with a k-choice of 1. i.e., 802 documents rightly classified*  
+
+```{r}
+library(class)
+set.seed(1)
+knn_pred=knn(train.X,test.X,train.author,k=1)
+```
+
+```{r}
+temp_knn=as.data.frame(cbind(knn_pred,test.author))
+temp_knn_flag<-ifelse(as.integer(knn_pred)==as.integer(test.author),1,0)
+sum(temp_knn_flag)
+sum(temp_knn_flag)*100/nrow(temp_knn) #802
+#32.08% accuracy
+```
+
+#### *-4 different classification techniques were used to predict the author for the documents. The comparison of their results are as follows:*  
+#### *-Random forest provides the best accuracy out of the three methods, with a 74%. The other two methods provide drastically lower accuracies around 32%*  
+#### *-Multinomial logistic regression and other tree based methods can also be used for the attribution. But we have chosen 3 for this exercise*  
+
+```{r}
+library(ggplot2)
+comp<-data.frame("Model"=c("Random Forest","Naive Baye's","KNN"), "Test.accuracy"=c(74.9,32.4,32.08))
+comp
+ggplot(comp,aes(x=Model,y=Test.accuracy))+geom_col()
+```
+
+
+## **Association rule mining**
+
+```{r echo=FALSE, include=FALSE}
+## Load the required packages
+library(tidyverse)
+library(arules) 
+library(arulesViz)
+```
+
+### **Problem**
+We have multiple shopping baskets of grocery purchases and we will find some interesting association rules between then using rule mining.
+
+#### Presenting the structure of the raw dataset:
+
+```{r echo=FALSE}
+## Read in the dataset and explore the structure
+setwd("C:/Users/Sahana/Documents/Predictive Models/ARM")
+groceries_raw = scan("groceries.txt", what = "", sep = "\n")
+head(groceries_raw)
+```
+
+```{r echo=FALSE, include=FALSE}
+str(groceries_raw)
+summary(groceries_raw)
+```
+
+We transform the data into a "transactions" class before applying the apriori algorithm.
+The summary of the dataset reveals the following:
+1. There are total of 9835 transactions in our dataset
+2. Whole milk is the present in 2513 baskets and is the most frequently bought item
+3. More than half of the transactions have 4 or lesser items per basket
+
+```{r echo=FALSE, include=FALSE}
+## Process the data and cast it as a "transactions" class
+groceries = strsplit(groceries_raw, ",")
+groctrans = as(groceries, "transactions")
+summary(groctrans)
+```
+
+```{r echo=FALSE}
+itemFrequencyPlot(groctrans, topN = 20)
+```
+
+#### **Let's explore rules with support > 0.05, confidence > 0.1 and length <= 2 using the 'apriori' algorithm**
+There are only 6 rules generated because of the high support and low confidence level. We also notice that most relationships in this item set include whole milk, yogurt and rolls/buns which is in accordance with the transaction frequency plot we saw earlier. These are some of the most frequently bought items.
+
+```{r echo=FALSE, include=FALSE}
+grocrules_1 = apriori(groctrans, 
+                     parameter=list(support=0.05, confidence=.1, minlen=2))
+```
+
+```{r echo=FALSE}
+arules::inspect(grocrules_1)
+plot(grocrules_1, method='graph')
+```
+
+#### **Let's decrease support further and increase confidence slightly with support > 0.02, confidence > 0.2 and length <= 2**
+
+This item set contains 72 rules and includes a lot more items. However, whole milk still seems to be a common occurence.
+
+```{r echo=FALSE, include=FALSE}
+grocrules_2 = apriori(groctrans, 
+                     parameter=list(support=0.02, confidence=.2, minlen=2))
+arules::inspect(grocrules_2)
+```
+
+```{r echo=FALSE}
+plot(head(grocrules_2,15,by='lift'), method='graph')
+```
+
+
+#### **Let us increase the confidence level and decrease the support further. Let's explore rules with support > 0.0015, confidence > 0.8 and length <= 2**
+
+
+```{r echo=FALSE, include=FALSE}
+grocrules_3 = apriori(groctrans, 
+                     parameter=list(support=0.0015, confidence=0.8, minlen=2))
+arules::inspect(grocrules_3)
+```
+
+```{r echo=FALSE}
+plot(head(grocrules_3, 5, by='lift'), method='graph')
+```
+
+#### **Summary**
+From the association rules, some of the conclusions that can be drawn are:
+1. People are more likely to buy bottled beer if they purchased red wine or liquor
+2. People are more likely to buy vegetables when they buy vegetable/fruit juice
+3. Whole milk is the most common item purchased by customers
+
+
