@@ -490,7 +490,7 @@ people who have artsy interests - art, tv film and travel. They sure do
 know how to enjoy life Cluster 3 has the computer lovers, who also have
 an interest for politics and travel.
 
-Market segementation can allows us to derive insights that will help
+Market segmentation allows us to derive insights that will help
 send the right message to the right group of people that will maximize
 the profits of the company and help build better relationships with the
 audience. Another point to note is that the cluster stability needs to
@@ -822,7 +822,10 @@ whole milk still seems to be a common occurence.
 #### **Summary**
 
 From the association rules, some of the conclusions that can be drawn
-are: 1. People are more likely to buy bottled beer if they purchased red
-wine or liquor 2. People are more likely to buy vegetables when they buy
-vegetable/fruit juice 3. Whole milk is the most common item purchased by
+are: 
+1. People are more likely to buy bottled beer if they purchased red
+wine or liquor 
+2. People are more likely to buy vegetables when they buy
+vegetable/fruit juice 
+3. Whole milk is the most common item purchased by
 customers
