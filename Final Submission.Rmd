@@ -8,7 +8,7 @@ output: md_document
 ## **Visual story telling part 1: Green buildings**
 
 ```{r, include=FALSE}
-data_directory <- 'C:/Users/Sahana/Documents/DataScienceR/STA380/data'
+data_directory <- 'C:/Users/Sijo/Documents/DataScienceR/STA380/data'
 setwd(data_directory)
 data_raw <- read.csv('greenbuildings.csv')
 ```
